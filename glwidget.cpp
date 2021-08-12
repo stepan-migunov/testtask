@@ -142,12 +142,15 @@ void GLWidget::makeObject()
     static const GLfloat coords[4][3] = {
         { +1, +1, 0 }, { -1, +1, 0 }, { -1, -1, 0 }, { +1, -1, 0 }
     };
-
+    GLfloat height_ = texture->height();
+    GLfloat width_ = texture->width();
+    float x_scale = height_ >= width_ ? width_ / height_ : 1;
+    float y_scale = height_ >= width_ ? 1 : height_ / width_;
     QList<GLfloat> vertData;
     for (int j = 0; j < 4; ++j) {
         // vertex position
-        vertData.append(0.5f * coords[j][0]);
-        vertData.append(0.5f * coords[j][1]);
+        vertData.append(0.7f * x_scale * coords[j][0]);
+        vertData.append(0.7f * y_scale * coords[j][1]);
         vertData.append(0.5f * coords[j][2]);
         // texture coordinate
         vertData.append(j == 0 || j == 3);
