@@ -4,22 +4,46 @@
 #include <QMessageBox>
 
 
-QOpenGLShaderProgram* GLWidget::makeShader(const QString& vertexShaderSource, const QString& fragmentShaderSource)
+QOpenGLShaderProgram* GLWidget::makeShader(const QString& shaderSource)
 {
-    releaseShader();
+
+    if(shaderSource.length()==0)
+    {
+        throw std::logic_error("No code found");
+    }
+
     QOpenGLShader *vshader = new QOpenGLShader(QOpenGLShader::Vertex, this);
-    vshader->compileSourceCode(vertexShaderSource);
+    vshader->compileSourceCode(vertexShader);
+
     QOpenGLShader *fshader = new QOpenGLShader(QOpenGLShader::Fragment, this);
-    fshader->compileSourceCode(fragmentShaderSource);
+    fshader->compileSourceCode(fragmentShader);
 
+    QOpenGLShader *userShader = new QOpenGLShader(QOpenGLShader::Fragment, this);
+    userShader->compileSourceCode(shaderSource);
+    if(!userShader->isCompiled())
+    {
+        delete vshader;
+        delete fshader;
+        auto e = std::logic_error(userShader->log().toStdString());
+        delete userShader;
+        throw e;
+    }
 
-    QOpenGLShaderProgram* shader = new QOpenGLShaderProgram;
-    shader->addShader(vshader);
-    shader->addShader(fshader);
-    shader->link();
-    if(!shader->isLinked())
-        throw std::logic_error("bad shader program!!!");
-    return shader;
+    QOpenGLShaderProgram* shaderProgram = new QOpenGLShaderProgram;
+    shaderProgram->addShader(vshader);
+    shaderProgram->addShader(fshader);
+    shaderProgram->addShader(userShader);
+    shaderProgram->link();
+    delete vshader;
+    delete fshader;
+    delete userShader;
+    if(!shaderProgram->isLinked())
+    {
+        auto e = std::logic_error(shaderProgram->log().toStdString());
+        delete shaderProgram;
+        throw e;
+    }
+    return shaderProgram;
 }
 
 
@@ -49,7 +73,14 @@ void GLWidget::setImagePathPointer(QString *fileName)
 void GLWidget::setShader(const QString &vertexShaderSource)
 {
     releaseShader();
-    shader = makeShader(vertexShaderSource,fragmentShader);
+    try {
+        shader = makeShader(vertexShaderSource);
+    }  catch (const std::logic_error& e) {
+        shader = makeShader(defaultShader);
+        QMessageBox::warning(this,"Error occurred",e.what());
+    }
+    shader->bind();
+    shader->setUniformValue("texture", 0);
 }
 
 void GLWidget::initializeGL()
@@ -65,24 +96,15 @@ void GLWidget::initializeGL()
 #define PROGRAM_VERTEX_ATTRIBUTE 0
 #define PROGRAM_TEXCOORD_ATTRIBUTE 1
 
-
-    const char *vsrc =
-        "attribute vec4 vertex;\n"
-        "attribute vec2 texCoord;\n"
-        "varying highp vec2 texc;\n"
-        "void main(void)\n"
-        "{\n"
-        "    gl_Position = vec4(vertex.x, vertex.y, vertex.z, 1);\n"
-        "    texc = texCoord;\n"
-        "}\n";
-
-    shader = makeShader(vsrc,fragmentShader);
+    shader = makeShader(defaultShader);
     shader->bind();
     shader->setUniformValue("texture", 0);
 }
 
 void GLWidget::paintGL()
 {
+
+    shader->bind();
     vbo.bind();
     glClearColor(clearColor.redF(), clearColor.greenF(), clearColor.blueF(), clearColor.alphaF());
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -93,7 +115,7 @@ void GLWidget::paintGL()
     shader->setAttributeBuffer(PROGRAM_TEXCOORD_ATTRIBUTE, GL_FLOAT, 3 * sizeof(GLfloat), 2, 5 * sizeof(GLfloat));
 
     texture->bind();
-    glDrawArrays(GL_TRIANGLE_FAN,0,6);
+    glDrawArrays(GL_TRIANGLE_FAN,0,4);
     //glDrawArrays(GL_TRIANGLE_STRIP,0,4);
 }
 
@@ -108,17 +130,20 @@ void GLWidget::releaseTexture()
     vbo.destroy();
     delete texture;
     texture = nullptr;
+    update();
 }
 
 void GLWidget::releaseShader()
 {
     delete shader;
     shader = nullptr;
+    update();
 }
 
 void GLWidget::applyShader()
 {
     paintGL();
+
     update();
 }
 
@@ -130,11 +155,13 @@ void GLWidget::setImage()
         if(im.isNull())
             throw;
         texture = new QOpenGLTexture(im.mirrored());
+        makeObject();
     }
     catch(...)
     {
         QMessageBox::warning(this,"", QString("Unable to load ") + *imageFilePathPointer + " as an texture");
     }
+    update();
 }
 
 void GLWidget::makeObject()

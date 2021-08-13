@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QtOpenGL/qopenglwindow.h>
 #include "filedialog.h"
+#include <QTimer>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class oqlview; }
@@ -19,23 +20,16 @@ public:
     FileDialog* dialog = nullptr;
 
 public slots:
-    void textChanged();
     void openButtonClicked();
     void applyButtonClicked();
 
 
 private:
+    QTimer* timer;
     Ui::oqlview *ui;
     bool hasImage = false;
     QString imagePath = ":/default.jpg";
     QString shaderPath = "";
-    const QString defaultShader = "attribute vec4 vertex;\n"
-        "attribute vec2 texCoord;\n"
-        "varying highp vec2 texc;\n"
-        "void main(void)\n"
-        "{\n"
-        "    gl_Position = vec4(vertex.x, vertex.y, vertex.z, 1);\n"
-        "    texc = texCoord;\n"
-        "}\n";
+
 };
 #endif // OQLVIEW_H

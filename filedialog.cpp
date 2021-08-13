@@ -2,6 +2,7 @@
 #include "ui_filedialog.h"
 
 #include <QFile>
+#include <QFileInfo>
 #include <QMessageBox>
 
 
@@ -20,7 +21,6 @@ FileDialog::FileDialog(QWidget *parent, QString *image, QString *shader) :
 {
     ui->setupUi(this);
     ui->imagePath->setText(*image);
-    ui->shaderPath->setText(*shader);
 }
 
 FileDialog::~FileDialog()
@@ -31,24 +31,15 @@ FileDialog::~FileDialog()
 void FileDialog::checkImage()
 {
     QString imagePath = ui->imagePath->text();
-    QString shaderFile = ui->shaderPath->text();
 
-    if(QFile::exists(imagePath))
+    if(QFile::exists(imagePath) && QFileInfo(imagePath).isFile())
     {
         *image = imagePath;
     }
     else
     {
-        QMessageBox::warning(this,"Warning","This file does not exist");
+        QMessageBox::warning(this,"Warning","Could not open the file " + imagePath);
         return;
-    }
-    if(QFile::exists(shaderFile))
-    {
-        *shader = shaderFile;
-    }
-    else
-    {
-        *shader = "";
     }
     accept();
 }

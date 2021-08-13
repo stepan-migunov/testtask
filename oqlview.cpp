@@ -2,6 +2,7 @@
 #include "ui_oqlview.h"
 
 #include <QFile>
+#include <QMessageBox>
 
 
 oqlview::oqlview(QWidget *parent)
@@ -10,16 +11,14 @@ oqlview::oqlview(QWidget *parent)
 {
     ui->setupUi(this);
     ui->openGLWidget->setImagePathPointer(&imagePath);
+    timer = new QTimer(this);
+    connect(timer,&QTimer::timeout,ui->openGLWidget,&GLWidget::applyShader);
 };
 
 oqlview::~oqlview()
 {
+    delete timer;
     delete ui;
-}
-
-void oqlview::textChanged()
-{
-
 }
 
 void oqlview::openButtonClicked()
@@ -35,6 +34,11 @@ void oqlview::openButtonClicked()
     else
         this->setWindowTitle("OpenGl shader viewer" );
 
+    if(QImage(imagePath).isNull())
+    {
+        QMessageBox::warning(this,"Warning",imagePath + " is not an image!!!");
+        imagePath = ":/default.jpg";
+    }
     auto openGlMain = ui->openGLWidget;
     openGlMain->setImagePathPointer(&imagePath);
     openGlMain->setImage();
@@ -42,10 +46,9 @@ void oqlview::openButtonClicked()
 
 void oqlview::applyButtonClicked()
 {
-    if(ui->textEdit->toPlainText().length()==0)
-        ui->openGLWidget->setShader(defaultShader);
-    else
-        ui->openGLWidget->setShader(ui->textEdit->toPlainText());
+    ui->openGLWidget->setShader(ui->textEdit->toPlainText());
     ui->openGLWidget->applyShader();
+    timer->start(10);
+    update();
 }
 

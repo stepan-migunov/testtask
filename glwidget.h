@@ -28,7 +28,7 @@ protected:
     void paintGL() override;
     void resizeGL(int width, int height) override;
 private:
-    QOpenGLShaderProgram *makeShader(const QString &vertexShaderSource, const QString &fragmentShaderSource);
+    QOpenGLShaderProgram *makeShader(const QString &vertexShaderSource);
     void releaseTexture();
     void releaseShader();
     QColor clearColor = Qt::black;
@@ -37,12 +37,33 @@ private:
     QOpenGLShaderProgram *shader = nullptr;
     QOpenGLBuffer vbo;
     QString* imageFilePathPointer;
-    const QString fragmentShader = "uniform sampler2D texture;\n"
+
+    const QString vertexShader =
+            "attribute vec4 vertex;\n"
+            "attribute vec2 texCoord;\n"
             "varying highp vec2 texc;\n"
+            "varying vec4 aPos;\n"
             "void main(void)\n"
             "{\n"
-            "    gl_FragColor = texture2D(texture, texc);\n"
-            //"    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n"
+            "    aPos = vec4(vertex.x, vertex.y, vertex.z, 1);\n"
+            "    gl_Position = aPos;\n"
+            "    texc = texCoord;\n"
+            "}\n";
+
+    const QString fragmentShader =
+            "uniform sampler2D texture;\n"
+            "varying highp vec2 texc;\n"
+            "varying vec4 aPos;\n"
+            "vec4 shaderMain(vec4,vec2,sampler2D);\n"
+            "void main(void)\n"
+            "{\n"
+            "    gl_FragColor = shaderMain( aPos, texc, texture );"
+            "}\n";
+
+    const QString defaultShader =
+            "vec4 shaderMain(vec4 aPos, vec2 texCoord, sampler2D texture)\n"
+            "{\n"
+            "    return texture2D(texture, texCoord);\n"
             "}\n";
 };
 
