@@ -13,7 +13,7 @@ class FileDialog : public QDialog
 
 public:
     explicit FileDialog(QWidget *parent = nullptr);
-    FileDialog(QWidget *parent = nullptr, QString* image = nullptr, QString* shader = nullptr);
+    FileDialog(QWidget *parent = nullptr, QString* image = nullptr);
     ~FileDialog();
 
 public slots:
@@ -22,7 +22,6 @@ public slots:
 private:
     Ui::FileDialog *ui;
     QString * image;
-    QString * shader;
 };
 
 #endif // FILEDIALOG_H

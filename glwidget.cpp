@@ -3,39 +3,63 @@
 #include <QException>
 #include <QMessageBox>
 
-QOpenGLShaderProgram* GLWidget::makeShader(const QString& shaderSource)
+QOpenGLShaderProgram* GLWidget::makeShader(const QString &vertexShaderSource, const QString &fragmentShaderSource)
 {
 
-    if(shaderSource.length()==0)
+    if(fragmentShaderSource.length()==0 && vertexShaderSource.length() == 0)
     {
-        throw std::logic_error("No code found");
+        return makeShader(defaultUserVertexShader, defaultUserFragmentShader);
+    }
+
+    if(fragmentShaderSource.length()==0)
+    {
+        return makeShader(vertexShaderSource, defaultUserFragmentShader);
+    }
+
+    if(vertexShaderSource.length()==0)
+    {
+        return makeShader(defaultUserVertexShader, fragmentShaderSource);
     }
 
     QOpenGLShader *vshader = new QOpenGLShader(QOpenGLShader::Vertex, this);
     vshader->compileSourceCode(vertexShader);
 
+    QOpenGLShader *userVertexShader = new QOpenGLShader(QOpenGLShader::Vertex,this);
+    userVertexShader->compileSourceCode(vertexShaderSource);
+
+    if(!userVertexShader->isCompiled())
+    {
+        delete vshader;
+        auto e = std::logic_error(userVertexShader->log().toStdString());
+        delete userVertexShader;
+        throw e;
+    }
+
     QOpenGLShader *fshader = new QOpenGLShader(QOpenGLShader::Fragment, this);
     fshader->compileSourceCode(fragmentShader);
 
-    QOpenGLShader *userShader = new QOpenGLShader(QOpenGLShader::Fragment, this);
-    userShader->compileSourceCode(shaderSource);
-    if(!userShader->isCompiled())
+    QOpenGLShader *userFragmentShader = new QOpenGLShader(QOpenGLShader::Fragment, this);
+    userFragmentShader->compileSourceCode(fragmentShaderSource);
+    if(!userFragmentShader->isCompiled())
     {
         delete vshader;
         delete fshader;
-        auto e = std::logic_error(userShader->log().toStdString());
-        delete userShader;
+        delete userVertexShader;
+        auto e = std::logic_error(userFragmentShader->log().toStdString());
+        delete userFragmentShader;
         throw e;
     }
 
     QOpenGLShaderProgram* shaderProgram = new QOpenGLShaderProgram;
     shaderProgram->addShader(vshader);
     shaderProgram->addShader(fshader);
-    shaderProgram->addShader(userShader);
+    shaderProgram->addShader(userVertexShader);
+    shaderProgram->addShader(userFragmentShader);
     shaderProgram->link();
     delete vshader;
     delete fshader;
-    delete userShader;
+    delete userFragmentShader;
+    delete userVertexShader;
     if(!shaderProgram->isLinked())
     {
         auto e = std::logic_error(shaderProgram->log().toStdString());
@@ -67,21 +91,19 @@ QSize GLWidget::sizeHint() const
 void GLWidget::setImagePathPointer(QString *fileName)
 {
     imageFilePathPointer = fileName;
-    update();
 }
 
-void GLWidget::setShader(const QString &vertexShaderSource)
+void GLWidget::setShader(const QString &vertexShaderSource, const QString &fragmentShaderSource)
 {
     releaseShader();
     try {
-        shader = makeShader(vertexShaderSource);
+        shader = makeShader(vertexShaderSource, fragmentShaderSource);
     }  catch (const std::logic_error& e) {
-        shader = makeShader(defaultShader);
+        shader = makeShader(defaultUserVertexShader,defaultUserFragmentShader);
         QMessageBox::warning(this,"Error occurred",e.what());
     }
     shader->bind();
     shader->setUniformValue("texture", 0);
-    update();
 }
 
 void GLWidget::initializeGL()
@@ -97,7 +119,7 @@ void GLWidget::initializeGL()
 #define PROGRAM_VERTEX_ATTRIBUTE 0
 #define PROGRAM_TEXCOORD_ATTRIBUTE 1
 
-    shader = makeShader(defaultShader);
+    shader = makeShader(defaultUserVertexShader, defaultUserFragmentShader);
     shader->bind();
     shader->setUniformValue("texture", 0);
     shader->setUniformValue("currTime",(GLfloat)QTime().msecsSinceStartOfDay());
@@ -133,19 +155,17 @@ void GLWidget::releaseTexture()
     vbo.destroy();
     delete texture;
     texture = nullptr;
-    update();
 }
 
 void GLWidget::releaseShader()
 {
     delete shader;
     shader = nullptr;
-    update();
 }
 
 void GLWidget::applyShader()
 {
-    paintGL();
+    //paintGL();
     update();
 }
 

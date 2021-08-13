@@ -13,11 +13,10 @@ FileDialog::FileDialog(QWidget *parent) :
     ui->setupUi(this);
 }
 
-FileDialog::FileDialog(QWidget *parent, QString *image, QString *shader) :
+FileDialog::FileDialog(QWidget *parent, QString *image) :
     QDialog(parent),
     ui(new Ui::FileDialog),
-    image(image),
-    shader(shader)
+    image(image)
 {
     ui->setupUi(this);
     ui->imagePath->setText(*image);
