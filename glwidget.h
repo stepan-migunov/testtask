@@ -40,7 +40,6 @@ private:
     QOpenGLBuffer vbo;
 
     QString* imageFilePathPointer;
-    QTime time;
 
     const QString vertexShader =
             "attribute vec4 vertex;\n"

@@ -123,7 +123,6 @@ void GLWidget::initializeGL()
     shader->bind();
     shader->setUniformValue("texture", 0);
     shader->setUniformValue("currTime",(GLfloat)QTime().msecsSinceStartOfDay());
-    time = QTime::currentTime();
 }
 
 void GLWidget::paintGL()
