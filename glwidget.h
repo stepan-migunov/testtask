@@ -6,6 +6,8 @@
 #include <QOpenGLBuffer>
 #include <QOpenGLTexture>
 #include <QOpenGLShaderProgram>
+#include <QTimer>
+#include <QTime>
 
 
 class GLWidget : public QOpenGLWidget, protected QOpenGLFunctions
@@ -36,7 +38,9 @@ private:
     QOpenGLTexture *texture = nullptr;
     QOpenGLShaderProgram *shader = nullptr;
     QOpenGLBuffer vbo;
+
     QString* imageFilePathPointer;
+    QTime time;
 
     const QString vertexShader =
             "attribute vec4 vertex;\n"
@@ -52,16 +56,17 @@ private:
 
     const QString fragmentShader =
             "uniform sampler2D texture;\n"
+            "uniform float currTime;\n"
             "varying highp vec2 texc;\n"
             "varying vec4 aPos;\n"
-            "vec4 shaderMain(vec4,vec2,sampler2D);\n"
+            "vec4 shaderMain(vec4,vec2,sampler2D, float);\n"
             "void main(void)\n"
             "{\n"
-            "    gl_FragColor = shaderMain( aPos, texc, texture );"
+            "    gl_FragColor = shaderMain( aPos, texc, texture, currTime );\n"
             "}\n";
 
     const QString defaultShader =
-            "vec4 shaderMain(vec4 aPos, vec2 texCoord, sampler2D texture)\n"
+            "vec4 shaderMain(vec4 aPos, vec2 texCoord, sampler2D texture, float currTime)\n"
             "{\n"
             "    return texture2D(texture, texCoord);\n"
             "}\n";

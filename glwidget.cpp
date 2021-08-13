@@ -3,7 +3,6 @@
 #include <QException>
 #include <QMessageBox>
 
-
 QOpenGLShaderProgram* GLWidget::makeShader(const QString& shaderSource)
 {
 
@@ -68,6 +67,7 @@ QSize GLWidget::sizeHint() const
 void GLWidget::setImagePathPointer(QString *fileName)
 {
     imageFilePathPointer = fileName;
+    update();
 }
 
 void GLWidget::setShader(const QString &vertexShaderSource)
@@ -81,6 +81,7 @@ void GLWidget::setShader(const QString &vertexShaderSource)
     }
     shader->bind();
     shader->setUniformValue("texture", 0);
+    update();
 }
 
 void GLWidget::initializeGL()
@@ -99,6 +100,8 @@ void GLWidget::initializeGL()
     shader = makeShader(defaultShader);
     shader->bind();
     shader->setUniformValue("texture", 0);
+    shader->setUniformValue("currTime",(GLfloat)QTime().msecsSinceStartOfDay());
+    time = QTime::currentTime();
 }
 
 void GLWidget::paintGL()
@@ -113,10 +116,10 @@ void GLWidget::paintGL()
     shader->enableAttributeArray(PROGRAM_TEXCOORD_ATTRIBUTE);
     shader->setAttributeBuffer(PROGRAM_VERTEX_ATTRIBUTE, GL_FLOAT, 0, 3, 5 * sizeof(GLfloat));
     shader->setAttributeBuffer(PROGRAM_TEXCOORD_ATTRIBUTE, GL_FLOAT, 3 * sizeof(GLfloat), 2, 5 * sizeof(GLfloat));
+    shader->setUniformValue("currTime",(GLfloat)QTime::currentTime().msecsSinceStartOfDay());
 
     texture->bind();
     glDrawArrays(GL_TRIANGLE_FAN,0,4);
-    //glDrawArrays(GL_TRIANGLE_STRIP,0,4);
 }
 
 void GLWidget::resizeGL(int width, int height)
@@ -143,7 +146,6 @@ void GLWidget::releaseShader()
 void GLWidget::applyShader()
 {
     paintGL();
-
     update();
 }
 
@@ -151,17 +153,15 @@ void GLWidget::setImage()
 {
     releaseTexture();
     try{
-        QImage im(*imageFilePathPointer);
-        if(im.isNull())
-            throw;
-        texture = new QOpenGLTexture(im.mirrored());
+        texture = new QOpenGLTexture(QImage(*imageFilePathPointer).mirrored());
         makeObject();
     }
-    catch(...)
+    catch(std::exception& e)
     {
-        QMessageBox::warning(this,"", QString("Unable to load ") + *imageFilePathPointer + " as an texture");
+        delete texture;
+        texture = new QOpenGLTexture(QImage(":default.jpg").mirrored());
+        QMessageBox::warning(this,"", QString("Unable to load ") + *imageFilePathPointer + " as an texture\n" + e.what());
     }
-    update();
 }
 
 void GLWidget::makeObject()
@@ -174,7 +174,8 @@ void GLWidget::makeObject()
     float x_scale = height_ >= width_ ? width_ / height_ : 1;
     float y_scale = height_ >= width_ ? 1 : height_ / width_;
     QList<GLfloat> vertData;
-    for (int j = 0; j < 4; ++j) {
+    for (int j = 0; j < 4; ++j)
+    {
         // vertex position
         vertData.append(0.7f * x_scale * coords[j][0]);
         vertData.append(0.7f * y_scale * coords[j][1]);

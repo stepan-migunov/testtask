@@ -3,6 +3,7 @@
 
 #include <QFile>
 #include <QMessageBox>
+#include <QTime>
 
 
 oqlview::oqlview(QWidget *parent)
@@ -36,8 +37,8 @@ void oqlview::openButtonClicked()
 
     if(QImage(imagePath).isNull())
     {
-        QMessageBox::warning(this,"Warning",imagePath + " is not an image!!!");
         imagePath = ":/default.jpg";
+        QMessageBox::warning(this,"Warning",imagePath + "is not an image!!!");
     }
     auto openGlMain = ui->openGLWidget;
     openGlMain->setImagePathPointer(&imagePath);
@@ -48,7 +49,7 @@ void oqlview::applyButtonClicked()
 {
     ui->openGLWidget->setShader(ui->textEdit->toPlainText());
     ui->openGLWidget->applyShader();
-    timer->start(10);
+    timer->start(1);
     update();
 }
 
