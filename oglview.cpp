@@ -6,25 +6,26 @@
 #include <QTime>
 
 
-oqlview::oqlview(QWidget *parent)
+oglview::oglview(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::oqlview)
 {
     ui->setupUi(this);
     ui->openGLWidget->setImagePathPointer(&imagePath);
+    ui->textEdit->setText(vertexShaderSource);
     timer = new QTimer(this);
     connect(timer,&QTimer::timeout,ui->openGLWidget,&GLWidget::applyShader);
 };
 
-oqlview::~oqlview()
+oglview::~oglview()
 {
     delete timer;
     delete ui;
 }
 
-void oqlview::openButtonClicked()
+void oglview::openButtonClicked()
 {
-    FileDialog dial(this, &imagePath, &shaderPath);
+    FileDialog dial(this, &imagePath);
     auto openFileCode = dial.exec();
     if(openFileCode == QDialog::Rejected)
         return;
@@ -45,11 +46,26 @@ void oqlview::openButtonClicked()
     openGlMain->setImage();
 }
 
-void oqlview::applyButtonClicked()
+void oglview::applyButtonClicked()
 {
-    ui->openGLWidget->setShader(ui->textEdit->toPlainText());
+    ui->openGLWidget->setShader(vertexShaderSource, fragmentShaderSource);
     ui->openGLWidget->applyShader();
-    timer->start(1);
-    update();
+    timer->start(10);
+}
+
+void oglview::radioPressed()
+{
+    if(ui->fragmentRadio->isChecked())
+        ui->textEdit->setText(fragmentShaderSource);
+    if(ui->vertexRadio->isChecked())
+        ui->textEdit->setText(vertexShaderSource);
+}
+
+void oglview::textChanged()
+{
+    if(ui->fragmentRadio->isChecked())
+        fragmentShaderSource = ui->textEdit->toPlainText();
+    if(ui->vertexRadio->isChecked())
+        vertexShaderSource = ui->textEdit->toPlainText();
 }
 

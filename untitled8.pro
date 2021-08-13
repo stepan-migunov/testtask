@@ -12,7 +12,7 @@ SOURCES += \
     filedialog.cpp \
     glwidget.cpp \
     main.cpp \
-    oqlview.cpp
+    oglview.cpp
 
 HEADERS += \
     filedialog.h \
